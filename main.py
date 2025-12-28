@@ -248,8 +248,16 @@ if __name__ == '__main__':
                 print(f"获取消息失败：第 {i} 批次，返回值为空或无效")
                 continue
             content_bytes = response.content
-            detected_encoding = chardet.detect(content_bytes)['encoding']
-            message = content_bytes.decode(detected_encoding if detected_encoding else "utf-8")
+            # 尝试使用 utf-8 解码，如果失败则尝试 GBK
+            try:
+                message = content_bytes.decode('utf-8')
+            except UnicodeDecodeError:
+                try:
+                    message = content_bytes.decode('gbk')
+                except UnicodeDecodeError:
+                    # 如果都失败了，使用 chardet 检测
+                    detected_encoding = chardet.detect(content_bytes)['encoding']
+                    message = content_bytes.decode(detected_encoding if detected_encoding else "utf-8", errors='ignore')
 
             # 处理HTML数据
             html = Tools.process_old_html(message)
